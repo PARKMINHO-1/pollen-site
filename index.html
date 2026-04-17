@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>포항 꽃가루 지수</title>
+<style>
+  body {
+    font-family: Arial;
+    background: #eef2f7;
+    text-align: center;
+    padding: 50px;
+  }
+  .card {
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    display: inline-block;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  }
+  .level { font-size: 30px; font-weight: bold; }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h2>🌸 포항 꽃가루 지수</h2>
+  <div id="date"></div>
+  <div id="level" class="level">불러오는 중...</div>
+</div>
+
+<script>
+// 날짜
+const today = new Date();
+document.getElementById("date").textContent =
+  today.toLocaleDateString();
+
+// ⚠️ 여기 핵심 (API 자리)
+async function getPollen() {
+  try {
+    // 👉 실제 API 넣는 자리 (예시 구조)
+    // const res = await fetch("API_URL");
+    // const data = await res.json();
+
+    // 테스트용 (지금은 랜덤)
+    const rand = Math.random();
+    let result = "";
+
+    if (rand < 0.33) result = "낮음 🌿";
+    else if (rand < 0.66) result = "보통 🌼";
+    else result = "높음 🌳";
+
+    document.getElementById("level").textContent = result;
+
+  } catch (e) {
+    document.getElementById("level").textContent = "데이터 오류";
+  }
+}
+
+getPollen();
+</script>
+
+</body>
+</html>
