@@ -2,41 +2,64 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<title>주식 뉴스 키워드 분석</title>
+<title>주식 뉴스 대시보드</title>
+
 <style>
-  body { font-family: Arial; background:#f5f6fa; padding:20px;}
-  h1 { text-align:center; }
-  .card {
-    background:white;
-    padding:20px;
-    margin:15px auto;
-    max-width:600px;
-    border-radius:10px;
-    box-shadow:0 5px 15px rgba(0,0,0,0.1);
-  }
-  .good { color:green; }
-  .bad { color:red; }
-  a { display:block; margin:5px 0; }
+body {
+  font-family: Arial;
+  background:#0f172a;
+  color:white;
+  padding:20px;
+}
+h1 { text-align:center; }
+
+.card {
+  background:#1e293b;
+  padding:20px;
+  margin:15px auto;
+  max-width:600px;
+  border-radius:15px;
+}
+
+.good { color:#22c55e; }
+.bad { color:#ef4444; }
+
+.status {
+  font-size:18px;
+  margin-top:5px;
+}
+
+a {
+  display:block;
+  margin:5px 0;
+  color:#60a5fa;
+  text-decoration:none;
+}
 </style>
+
 </head>
 <body>
 
-<h1>📊 주식 뉴스 분석</h1>
+<h1>📊 오늘 시장 뉴스 요약</h1>
+<p id="date" style="text-align:center;"></p>
+
 <div id="result"></div>
 
 <script>
 
-// 📌 대형주 리스트
-const stocks = ["삼성전자", "SK하이닉스", "LG에너지솔루션", "현대차", "NAVER"];
+// 날짜
+const today = new Date();
+document.getElementById("date").textContent =
+  today.toLocaleDateString();
 
-// 📌 키워드 (20개씩)
-const goodKeywords = ["수주","성장","호황","흑자","AI","증가","확대","상승","개발","진출",
-"혁신","신사업","호재","투자","개선","성공","계약","파트너십","돌파","최대"];
+// 종목
+const stocks = ["삼성전자","SK하이닉스","현대차","NAVER"];
 
-const badKeywords = ["적자","하락","감소","리콜","소송","악재","위기","중단","폐기","손실",
-"축소","철수","논란","지연","파업","규제","충격","불안","폭락","문제"];
+// 키워드
+const goodKeywords = ["수주","성장","흑자","AI","증가","확대","상승","개발","투자","계약"];
+const badKeywords = ["적자","하락","소송","리콜","손실","위기","중단","논란","규제","폭락"];
 
-// 📌 RSS 가져오기 (네이버 뉴스)
+// 뉴스 가져오기
 async function getNews(stock) {
   const url = `https://news.google.com/rss/search?q=${encodeURIComponent(stock)}&hl=ko&gl=KR&ceid=KR:ko`;
 
@@ -46,37 +69,33 @@ async function getNews(stock) {
   const parser = new DOMParser();
   const xml = parser.parseFromString(data.contents, "text/xml");
 
-  const items = xml.querySelectorAll("item");
-
-  let newsList = [];
-
-  items.forEach(item => {
-    const title = item.querySelector("title").textContent;
-    const link = item.querySelector("link").textContent;
-    newsList.push({title, link});
-  });
-
-  return newsList;
+  return [...xml.querySelectorAll("item")].map(item => ({
+    title: item.querySelector("title").textContent,
+    link: item.querySelector("link").textContent
+  }));
 }
 
-// 📌 키워드 분석
-function analyze(newsList) {
+// 분석
+function analyze(news) {
   let good = 0;
   let bad = 0;
 
-  newsList.forEach(n => {
-    goodKeywords.forEach(k => {
-      if (n.title.includes(k)) good++;
-    });
-    badKeywords.forEach(k => {
-      if (n.title.includes(k)) bad++;
-    });
+  news.forEach(n => {
+    if (goodKeywords.some(k => n.title.includes(k))) good++;
+    if (badKeywords.some(k => n.title.includes(k))) bad++;
   });
 
   return {good, bad};
 }
 
-// 📌 실행
+// 상태 판단
+function getStatus(good, bad) {
+  if (good > bad) return "🟢 긍정";
+  if (bad > good) return "🔴 부정";
+  return "🟡 혼재";
+}
+
+// 실행
 async function run() {
   const container = document.getElementById("result");
 
@@ -85,17 +104,19 @@ async function run() {
 
     if (news.length < 10) continue;
 
-    const result = analyze(news);
+    const {good, bad} = analyze(news);
+    const status = getStatus(good, bad);
 
     let html = `
-      <div class="card">
-        <h2>${stock}</h2>
-        <p>총 뉴스: ${news.length}</p>
-        <p class="good">호재: ${result.good}</p>
-        <p class="bad">악재: ${result.bad}</p>
+    <div class="card">
+      <h2>${stock}</h2>
+      <div class="status">${status}</div>
+      <p>뉴스 ${news.length}개</p>
+      <p class="good">🟢 호재 ${good}</p>
+      <p class="bad">🔴 악재 ${bad}</p>
     `;
 
-    news.slice(0,10).forEach(n => {
+    news.slice(0,5).forEach(n => {
       html += `<a href="${n.link}" target="_blank">${n.title}</a>`;
     });
 
